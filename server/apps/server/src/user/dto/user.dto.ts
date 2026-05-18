@@ -9,7 +9,7 @@ import type { UserLogin, UserRegister, UserUpdate, Token } from '@en/common/user
  * @description 注册用户时邮箱可选，用于登录时的邮箱验证
  */
 export class UserLoginDto implements UserLogin {
-    @ApiProperty({ description: '手机号', example: '13800138000' })
+    @ApiProperty({ description: '手机号', example: '13000000000' })
     phone!: string;
 
     @ApiProperty({ description: '密码', example: '123456' })
@@ -20,7 +20,7 @@ export class UserRegisterDto implements UserRegister {
     @ApiProperty({ description: '用户名', example: '张三' })
     name!: string;
 
-    @ApiProperty({ description: '手机号', example: '13800138000' })
+    @ApiProperty({ description: '手机号', example: '13000000000' })
     phone!: string;
 
     @ApiPropertyOptional({ description: '邮箱', example: 'zhangsan@example.com' })

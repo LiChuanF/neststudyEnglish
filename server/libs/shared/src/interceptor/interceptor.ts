@@ -50,11 +50,11 @@ export class InterceptorInterceptor implements NestInterceptor<
     ResponseResult
 > {
     intercept(
-        context: ExecutionContext,
-        next: CallHandler<ResponseData>,
+        context: ExecutionContext, // 执行上下文
+        next: CallHandler<ResponseData>, // 下一个处理程序
     ): Observable<ResponseResult> {
-        const ctx = context.switchToHttp();
-        const request = ctx.getRequest<Request>();
+        const ctx = context.switchToHttp(); // 切换到HTTP上下文
+        const request = ctx.getRequest<Request>(); // 获取请求对象
         return next.handle().pipe(
             map((data) => {
                 return {

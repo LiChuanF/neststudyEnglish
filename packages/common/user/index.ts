@@ -40,11 +40,9 @@ export type WebResultUser = ResultUser & {
 }
 //token的载荷
 export type TokenPayload = Pick<User, 'name' | 'email'> & { userId: User['id'] }
-//刷新token的载荷
-export type RefreshTokenPayload = TokenPayload & { tokenType: 'refresh' | 'access' }
-// {
-//     name:string,
-//     email:string | null,
-//     userId:string
-//     tokenType:'access' | 'refresh'
-// }
+// access token 载荷
+export type AccessTokenPayload = TokenPayload & { tokenType: 'access' }
+// refresh token 载荷（含 jti，用于轮换与防重放）
+export type RefreshTokenPayload = TokenPayload & { tokenType: 'refresh'; jti: string }
+// JWT 解码联合类型
+export type JwtPayload = AccessTokenPayload | RefreshTokenPayload

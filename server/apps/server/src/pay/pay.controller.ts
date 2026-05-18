@@ -1,8 +1,8 @@
-import { Controller, Post, Body, UseGuards, Req, All } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req, All, Res } from '@nestjs/common';
 import { PayService } from './pay.service';
-import type { CreatePayDto } from '@en/common/pay';
+import type { CreatePayDto, QueryPayDto } from '@en/common/pay';
 import { AuthGuard } from '@libs/shared/auth/auth.guard';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 
 @Controller('pay')
 export class PayController {
@@ -15,9 +15,20 @@ export class PayController {
         return this.payService.create(createPayDto, user);
     }
 
-    @All('notify') // 支付通知
-    notify(@Req() req: Request) {
-        return this.payService.notify(req);
+    @UseGuards(AuthGuard)
+    @Post('query')
+    query(@Body() queryPayDto: QueryPayDto, @Req() req: Request) {
+        return this.payService.query(queryPayDto.outTradeNo, req.user);
     }
 
+    // 支付宝异步通知：须返回纯文本 success/fail，不能走统一 JSON 包装
+    @All('notify')
+    async notify(@Req() req: Request, @Res() res: Response) {
+        try {
+            await this.payService.handleNotify(req);
+            res.type('text/plain').send('success');
+        } catch {
+            res.type('text/plain').send('fail');
+        }
+    }
 }

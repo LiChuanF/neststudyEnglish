@@ -37,6 +37,14 @@ export class UserController {
         return this.userService.refresh(createUserDto);
     }
 
+    @ApiBearerAuth()
+    @ApiOperation({ summary: '退出登录' })
+    @UseGuards(AuthGuard)
+    @Post('logout')
+    logout(@Req() req: Request) {
+        return this.userService.logout(req.user.userId);
+    }
+
     @ApiOperation({ summary: '上传头像' })
     @ApiConsumes('multipart/form-data')
     @ApiBody({

@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { JwtService } from '@nestjs/jwt';
-import type { RefreshTokenPayload } from '@en/common/user';
+import type { AccessTokenPayload } from '@en/common/user';
 
 // 守卫 用于保护路由 判断用户是否登录
 @Injectable()
@@ -20,7 +20,7 @@ export class AuthGuard implements CanActivate {
         const token = headers.authorization.split(' ')[1];
         try {
             // 验证token是否有效
-            const decoded = this.jwtService.verify<RefreshTokenPayload>(token);
+            const decoded = this.jwtService.verify<AccessTokenPayload>(token);
             if (decoded.tokenType !== 'access') {
                 throw new UnauthorizedException('token已过期或无效'); //401
             }

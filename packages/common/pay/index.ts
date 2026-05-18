@@ -5,7 +5,17 @@ export interface CreatePayDto {
     courseId: string; //课程ID
 }
 
+export interface QueryPayDto {
+    outTradeNo: string; // 商户订单号
+}
+
 export interface ResultPay {
     payUrl: string; //支付URL
     timeExpire: number; //过期时间
+    outTradeNo: string; // 商户订单号，用于主动查单
+}
+
+export interface QueryPayResult {
+    paid: boolean;
+    tradeStatus: string;
 }

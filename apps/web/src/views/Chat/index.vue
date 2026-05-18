@@ -8,28 +8,48 @@
 import Conversations from './components/Conversations.vue';
 import Bubble from './components/Bubble.vue';
 import { useUserStore } from '@/stores/user'
-import { ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { getChatHistory } from '@/apis/chat';
 import type { ChatRoleType, ChatMessageList, ChatDto, ChatMessage } from '@en/common/chat';
 import { sse, CHAT_URL } from '@/apis/sse';
+
 const userStore = useUserStore()
-const list = ref<ChatMessageList>([]) //存储历史记录的数组
-const userId = userStore.user?.id
-const role = ref<ChatRoleType>('normal') //存储角色
+const list = ref<ChatMessageList>([])
+// 必须用 computed：换账号登录时组件可能未销毁，快照 userId 会一直是上一个用户
+const userId = computed(() => userStore.user?.id)
+const role = ref<ChatRoleType>('normal')
+
 const getRole = async (params: ChatRoleType) => {
     role.value = params
-    const res = await getChatHistory(userId!, params) //获取历史记录
-    list.value = res.data //存储历史记录
+    if (!userId.value) {
+        list.value = []
+        return
+    }
+    list.value = []
+    const res = await getChatHistory(userId.value, params)
+    list.value = res.data
 }
-const sendMessage = (message: string, deepThink: boolean, webSearch: boolean) => {
-    list.value.push({ role: 'human', content: message, type: 'chat' }) //添加用户的消息
-    list.value.push({ role: 'ai', content: '', reasoning: '', type: 'chat' }) //添加AI的消息
 
-    // 发送消息到后端
+// 登录用户变化时（含弹窗登录未刷新页面）重新拉取当前角色历史
+watch(userId, async (id, prevId) => {
+    if (id === prevId) return
+    list.value = []
+    if (!id) return
+    const res = await getChatHistory(id, role.value)
+    list.value = res.data
+})
+
+const sendMessage = (message: string, deepThink: boolean, webSearch: boolean) => {
+    if (!userId.value) return
+    list.value.push({ role: 'human', content: message, type: 'chat' })
+    list.value.push({ role: 'ai', content: '', reasoning: '', type: 'chat' })
+
     sse<ChatMessage, ChatDto>(CHAT_URL, "POST", {
         deepThink,
         webSearch,
-        role: role.value, content: message, userId: userId!
+        role: role.value,
+        content: message,
+        userId: userId.value,
     }, (data) => {
         const lastItem = list.value[list.value.length - 1]
         if (lastItem) {

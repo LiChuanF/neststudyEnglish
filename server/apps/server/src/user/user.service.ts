@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService, ResponseService } from '@libs/shared';
-import type { UserLogin, UserRegister, Token, RefreshTokenPayload, UserUpdate } from '@en/common/user'
+import type { UserLogin, UserRegister, Token, UserUpdate } from '@en/common/user'
 import type { Prisma } from '@libs/shared/generated/prisma/client';
 import { AuthService } from '../auth/auth.service';
-import { JwtService } from '@nestjs/jwt';
 import { userSelect, updateUserSelect } from './user.select';
 import { MinioService } from '@libs/shared/minio/minio.service';
 import { ConfigService } from '@nestjs/config';
@@ -14,7 +13,6 @@ export class UserService {
         private readonly prisma: PrismaService,
         private readonly response: ResponseService,
         private readonly authService: AuthService,
-        private readonly jwtService: JwtService,
         private readonly minioService: MinioService,
         private readonly configService: ConfigService,
     ) { }
@@ -46,7 +44,7 @@ export class UserService {
         })
         console.log(updateUser);
 
-        const token = this.authService.generateToken({ userId: updateUser.id, name: updateUser.name, email: updateUser.email });
+        const token = await this.authService.issueToken({ userId: updateUser.id, name: updateUser.name, email: updateUser.email });
         return this.response.success({ ...updateUser, token })
     }
     //注册
@@ -84,35 +82,36 @@ export class UserService {
             data,
             select: userSelect // 返回用户信息
         })
-        const token = this.authService.generateToken({ userId: newUser.id, name: newUser.name, email: newUser.email });
+        const token = await this.authService.issueToken({ userId: newUser.id, name: newUser.name, email: newUser.email });
         return this.response.success({ ...newUser, token })
     }
 
-    //刷新token
+    //刷新token（Refresh Token Rotation + 重放检测）
     async refresh(createUserDto: Omit<Token, 'accessToken'>) {
-        //1. 验证refreshToken是否有效 verify检查token是否有效 并且返回解码后的数据 sign生成token
-        try {
-            const decoded = this.jwtService.verify<RefreshTokenPayload>(createUserDto.refreshToken);
+        const result = await this.authService.rotateRefreshToken(createUserDto.refreshToken);
 
-            //2.为什么增加这么一个判断 accessToken 冒充refreshToken 进行攻击
-            if (decoded.tokenType !== 'refresh') {
-                return this.response.error(null, 'refreshToken已过期或无效');
+        if (!result.ok) {
+            if (result.reason === 'reuse') {
+                return this.response.error(null, '检测到异常登录，请重新登录');
             }
-            const user = await this.prisma.user.findUnique({
-                where: {
-                    id: decoded.userId, //查询用户ID
-                }
-            })
-            //3.如果查不出来说明userId是伪造的
-            if (!user) {
-                return this.response.error(null, '用户不存在');
-            }
-            const token = this.authService.generateToken({ userId: user.id, name: user.name, email: user.email });
-            return this.response.success(token);
-        }
-        catch (error) {
             return this.response.error(null, 'refreshToken已过期或无效');
         }
+
+        const user = await this.prisma.user.findUnique({
+            where: { id: result.userId },
+        });
+        if (!user) {
+            await this.authService.revokeRefreshToken(result.userId);
+            return this.response.error(null, '用户不存在');
+        }
+
+        return this.response.success(result.token);
+    }
+
+    //登出：吊销 Redis 中的 refresh jti
+    async logout(userId: string) {
+        await this.authService.revokeRefreshToken(userId);
+        return this.response.success(null, '已退出登录');
     }
 
     //上传头像

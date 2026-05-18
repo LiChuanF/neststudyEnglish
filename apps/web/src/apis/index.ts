@@ -65,9 +65,9 @@ serverApi.interceptors.response.use(res => {
             //切换成功更新token到pinia中
             userStore.updateToken(newToken.data)
         } else {
-            userStore.logout() //清空user
-            ElMessage.error('登录已过期,请重新登录')
-            router.replace('/') //跳转到首页
+            userStore.logout()
+            ElMessage.error(newToken.message || '登录已过期,请重新登录')
+            router.replace('/')
             return Promise.reject(error)
         }
         const newAccessToken = newToken.data.accessToken

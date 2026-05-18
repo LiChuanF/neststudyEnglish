@@ -2,6 +2,7 @@ import { IS_SHOW_LOGIN } from '@/components/Login/type'
 import { inject, ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 import router from '@/router'
+import { logout as logoutApi } from '@/apis/user'
 
 export const useLogin = () => {
     const isShowLogin = inject(IS_SHOW_LOGIN, ref(false))
@@ -20,9 +21,16 @@ export const useLogin = () => {
         isShowLogin.value = false
     }
 
-    const logout = () => {
-        userStore.logout() //pinia的值清空
-        router.push('/') //跳转到首页
+    const logout = async () => {
+        if (userStore.getAccessToken) {
+            try {
+                await logoutApi()
+            } catch {
+                // 网络失败仍清空本地登录态
+            }
+        }
+        userStore.logout()
+        router.push('/')
     }
     return {
         login,
