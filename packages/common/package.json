@@ -1,0 +1,22 @@
+{
+  "name": "@en/common",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "exports": {
+    "./word": "./word/index.ts",
+    "./user": "./user/index.ts",
+    "./chat": "./chat/index.ts",
+    "./course": "./course/index.ts",
+    "./pay": "./pay/index.ts",
+    "./learn": "./learn/index.ts",
+    "./tracker": "./tracker/index.ts"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.33.0"
+}
