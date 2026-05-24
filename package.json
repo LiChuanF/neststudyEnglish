@@ -7,9 +7,10 @@
 	"license": "UNLICENSED",
 	"scripts": {
 		"web": "pnpm --filter @en/web dev",
+		"react": "pnpm --filter @en/web-react dev",
 		"server": "pnpm --filter @en/server start:dev",
 		"ai": "pnpm --filter @en/server start:dev ai",
-		"all": "concurrently \"pnpm run web\" \"pnpm run server\" \"pnpm run ai\""
+		"all": "concurrently \"pnpm run web\" \"pnpm run react\" \"pnpm run server\" \"pnpm run ai\""
 	},
 	"dependencies": {
 		"@types/md5": "^2.3.6",
